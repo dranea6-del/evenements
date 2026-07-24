@@ -1,5 +1,6 @@
 <meta charset="utf-8">
-<title>Calendrier des événements numériques — DANE Lille</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calendrier des événements numériques — DRANE de Lille</title>
 <style>
   :root {
     --paper: #f5f6f1;
@@ -96,12 +97,34 @@
 
   .dane-title {
     font-family: ui-serif, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
-    font-size: clamp(28px, 4vw, 40px);
+    font-size: clamp(28px, 6vw, 40px);
     line-height: 1.15;
-    margin: 0 0 8px;
+    margin: 0 0 2px;
     text-wrap: balance;
     font-weight: 600;
   }
+
+  .dane-underline {
+    display: block;
+    width: 190px;
+    max-width: 40vw;
+    height: 10px;
+    margin: 0 0 18px;
+    overflow: visible;
+  }
+  .dane-underline path {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-dasharray: 220;
+    stroke-dashoffset: 220;
+    animation: dane-draw 0.9s 0.15s ease-out forwards;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dane-underline path { animation: none; stroke-dashoffset: 0; }
+  }
+  @keyframes dane-draw { to { stroke-dashoffset: 0; } }
 
   .dane-sub {
     color: var(--muted);
@@ -110,6 +133,32 @@
     line-height: 1.5;
     margin: 0 0 32px;
   }
+
+  .dane-monthnav {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 0 14px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .dane-monthnav::-webkit-scrollbar { display: none; }
+  .dane-monthnav a {
+    flex: 0 0 auto;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    background: var(--card-bg);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 5px 11px;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .dane-monthnav a:hover { color: var(--accent); border-color: var(--accent); }
 
   .dane-toolbar {
     display: flex;
@@ -160,6 +209,7 @@
     letter-spacing: 0.02em;
     color: var(--muted);
     padding: 10px 0 6px;
+    font-variant-numeric: tabular-nums;
   }
 
   .dane-month {
@@ -246,6 +296,7 @@
     font-size: 11.5px;
     color: var(--amber);
     margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
   }
 
   .dane-link {
@@ -272,11 +323,25 @@
     font-size: 12px;
     color: var(--muted);
   }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  @media (max-width: 560px) {
+    #dane-app { padding: 40px 16px 72px; }
+    .dane-toolbar { padding: 12px 0; }
+    .dane-toolbar select { flex: 1 1 auto; }
+    .dane-refresh { flex: 1 1 100%; }
+    .dane-cards { grid-template-columns: 1fr; }
+  }
 </style>
 
 <div id="dane-app">
-  <p class="dane-eyebrow">DANE Lille · Numérique éducatif</p>
+  <p class="dane-eyebrow">DRANE de Lille · Numérique éducatif</p>
   <h1 class="dane-title">Calendrier des événements numériques</h1>
+  <svg class="dane-underline" viewBox="0 0 190 10" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M2,6 C40,1 70,9 96,5 C122,1 150,8 188,3" />
+  </svg>
   <p class="dane-sub">Concours, ateliers et temps forts autour du numérique éducatif — académie de Lille.</p>
 
   <div class="dane-toolbar">
@@ -285,6 +350,7 @@
     <select id="dane-public-filter"><option value="">Tous les publics</option></select>
     <button class="dane-refresh" id="dane-refresh-btn">↻ Actualiser</button>
   </div>
+  <div class="dane-monthnav" id="dane-monthnav"></div>
   <div class="dane-status" id="dane-status">Chargement…</div>
 
   <div id="dane-content"></div>
@@ -324,6 +390,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 
   var statusEl = document.getElementById('dane-status');
   var contentEl = document.getElementById('dane-content');
+  var monthNavEl = document.getElementById('dane-monthnav');
   var searchEl = document.getElementById('dane-search');
   var typeFilterEl = document.getElementById('dane-type-filter');
   var publicFilterEl = document.getElementById('dane-public-filter');
@@ -443,6 +510,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 
   function render() {
     contentEl.innerHTML = '';
+    monthNavEl.innerHTML = '';
     if (!state.rows.length) {
       contentEl.innerHTML = '<p class="dane-empty">Aucune donnée à afficher.</p>';
       return;
@@ -466,12 +534,19 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
 
     order.forEach(function (key) {
       var group = groups[key];
+      var anchorId = 'dane-m-' + key.replace(/[^a-z0-9]/gi, '');
       var section = document.createElement('div');
+      section.id = anchorId;
 
       var title = document.createElement('div');
       title.className = 'dane-month';
       title.textContent = group.label;
       section.appendChild(title);
+
+      var navChip = document.createElement('a');
+      navChip.href = '#' + anchorId;
+      navChip.textContent = group.label;
+      monthNavEl.appendChild(navChip);
 
       var cardsWrap = document.createElement('div');
       cardsWrap.className = 'dane-cards';
