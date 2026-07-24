@@ -239,11 +239,12 @@
   }
 
   .dane-card {
+    position: relative;
     background: var(--card-bg);
     border: 1px solid var(--rule);
     border-left: 3px solid var(--card-accent, var(--accent));
     border-radius: 8px;
-    padding: 16px;
+    padding: 16px 44px 16px 16px;
     box-shadow: var(--shadow);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     opacity: 0;
@@ -251,6 +252,22 @@
     animation: dane-rise 0.4s ease forwards;
   }
   .dane-card:hover { transform: translateY(-2px); }
+
+  .dane-star-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    padding: 2px;
+    color: var(--rule);
+    transition: color 0.15s ease, transform 0.1s ease;
+  }
+  .dane-star-btn:hover { color: var(--amber); transform: scale(1.1); }
+  .dane-star-btn.active { color: var(--amber); }
 
   @keyframes dane-rise {
     to { opacity: 1; transform: translateY(0); }
@@ -263,20 +280,20 @@
   .dane-card-title {
     font-family: ui-serif, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
     font-weight: 600;
-    font-size: 16px;
+    font-size: 18.5px;
     line-height: 1.3;
-    margin-bottom: 8px;
+    margin-bottom: 9px;
     text-wrap: balance;
   }
 
-  .dane-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .dane-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 11px; }
 
   .dane-badge {
     font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 10.5px;
+    font-size: 11.5px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    padding: 3px 8px;
+    padding: 3px 9px;
     border-radius: 999px;
     background: var(--card-accent-soft, var(--accent-soft));
     color: var(--card-accent, var(--accent));
@@ -290,23 +307,23 @@
   }
 
   .dane-desc {
-    font-size: 13.5px;
+    font-size: 15px;
     color: var(--ink);
-    opacity: 0.85;
-    line-height: 1.5;
-    margin-bottom: 10px;
+    opacity: 0.88;
+    line-height: 1.55;
+    margin-bottom: 11px;
   }
 
   .dane-dates {
     font-family: ui-monospace, "SF Mono", Menlo, monospace;
-    font-size: 11.5px;
+    font-size: 12.5px;
     color: var(--amber);
-    margin-bottom: 10px;
+    margin-bottom: 11px;
     font-variant-numeric: tabular-nums;
   }
 
   .dane-link {
-    font-size: 13px;
+    font-size: 14.5px;
     font-weight: 600;
     color: var(--card-accent, var(--accent));
     text-decoration: none;
@@ -348,13 +365,16 @@
   <svg class="dane-underline" viewBox="0 0 190 10" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <path d="M2,6 C40,1 70,9 96,5 C122,1 150,8 188,3" />
   </svg>
-  <p class="dane-sub">Concours, ateliers et temps forts autour du numérique éducatif — académie de Lille.</p>
+  <p class="dane-sub">Retrouvez dans cette application tous les concours, ateliers et temps forts autour du numérique éducatif qui se dérouleront dans l'académie de Lille.</p>
 
   <div class="dane-toolbar">
     <input class="dane-search" id="dane-search" type="search" placeholder="Rechercher un événement, un mot-clé…" />
     <select id="dane-type-filter"><option value="">Tous les types</option></select>
     <select id="dane-public-filter"><option value="">Tous les publics</option></select>
     <button class="dane-refresh" id="dane-refresh-btn">↻ Actualiser</button>
+    <button class="dane-refresh" id="dane-theme-toggle">🌙 Mode sombre</button>
+    <button class="dane-refresh" id="dane-saved-toggle">★ Mes événements (0)</button>
+    <button class="dane-refresh" id="dane-download-btn" style="display:none">⬇ Télécharger (.txt)</button>
   </div>
   <div class="dane-monthnav" id="dane-monthnav"></div>
   <div class="dane-status" id="dane-status">Chargement…</div>
@@ -401,9 +421,18 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
   var typeFilterEl = document.getElementById('dane-type-filter');
   var publicFilterEl = document.getElementById('dane-public-filter');
   var refreshBtn = document.getElementById('dane-refresh-btn');
+  var themeToggleBtn = document.getElementById('dane-theme-toggle');
+  var savedToggleBtn = document.getElementById('dane-saved-toggle');
+  var downloadBtn = document.getElementById('dane-download-btn');
 
   var state = { rows: [], cols: {}, typeColorMap: {} };
   var monthObserver = null;
+  var viewMode = 'calendar';
+
+  var THEME_KEY = 'dane-theme-pref';
+  var SAVED_KEY = 'dane-saved-events-v1';
+  var savedEvents = {};
+  try { savedEvents = JSON.parse(localStorage.getItem(SAVED_KEY) || '{}'); } catch (e) { savedEvents = {}; }
 
   function findColumn(headers, keywords) {
     for (var i = 0; i < headers.length; i++) {
@@ -440,6 +469,105 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       var key = v.toLowerCase();
       if (aliases[key]) row[col] = aliases[key];
     });
+  }
+
+  function isDarkActive() {
+    var pref = document.documentElement.getAttribute('data-theme');
+    if (pref === 'dark') return true;
+    if (pref === 'light') return false;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
+  function updateThemeButton() {
+    themeToggleBtn.textContent = isDarkActive() ? '☀️ Mode clair' : '🌙 Mode sombre';
+  }
+
+  function applyStoredTheme() {
+    var pref = localStorage.getItem(THEME_KEY);
+    if (pref === 'dark' || pref === 'light') {
+      document.documentElement.setAttribute('data-theme', pref);
+    }
+    updateThemeButton();
+  }
+
+  function toggleTheme() {
+    var next = isDarkActive() ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem(THEME_KEY, next);
+    updateThemeButton();
+  }
+
+  function persistSaved() {
+    localStorage.setItem(SAVED_KEY, JSON.stringify(savedEvents));
+    updateSavedToggleLabel();
+  }
+
+  function eventIdFromRow(row, cols) {
+    return (cols.title ? row[cols.title] : '') + '|' + (cols.month ? row[cols.month] : '');
+  }
+
+  function toggleSaved(row, cols) {
+    var id = eventIdFromRow(row, cols);
+    if (savedEvents[id]) {
+      delete savedEvents[id];
+    } else {
+      savedEvents[id] = {
+        title: cols.title ? row[cols.title] : '',
+        type: cols.type ? row[cols.type] : '',
+        public: cols.public ? row[cols.public] : '',
+        description: cols.description ? row[cols.description] : '',
+        month: cols.month ? row[cols.month] : '',
+        dates: cols.dates ? row[cols.dates] : '',
+        link: cols.link ? row[cols.link] : '',
+      };
+    }
+    persistSaved();
+    render();
+  }
+
+  function updateSavedToggleLabel() {
+    var count = Object.keys(savedEvents).length;
+    savedToggleBtn.textContent = viewMode === 'saved' ? '📅 Retour au calendrier' : '★ Mes événements (' + count + ')';
+    downloadBtn.style.display = (viewMode === 'saved' && count > 0) ? '' : 'none';
+  }
+
+  function getDisplayCols() {
+    if (viewMode === 'saved') {
+      return { title: 'title', type: 'type', public: 'public', description: 'description', month: 'month', dates: 'dates', link: 'link' };
+    }
+    return state.cols;
+  }
+
+  function getDisplayRows() {
+    if (viewMode === 'saved') {
+      return Object.values(savedEvents);
+    }
+    return state.rows;
+  }
+
+  function downloadSavedAsText() {
+    var items = Object.values(savedEvents);
+    if (!items.length) return;
+    items.sort(function (a, b) { return (a.month || '').localeCompare(b.month || ''); });
+    var lines = ['Mes événements — DRANE de Lille', ''];
+    items.forEach(function (it) {
+      var mk = parseMonthKey(it, { month: 'month' });
+      lines.push('• ' + it.title + (it.type ? ' (' + it.type + ')' : ''));
+      if (it.public) lines.push('  Public : ' + it.public);
+      lines.push('  Période : ' + mk.label + (it.dates ? ' — ' + it.dates : ''));
+      if (it.description) lines.push('  ' + it.description);
+      if (it.link) lines.push('  Lien : ' + it.link);
+      lines.push('');
+    });
+    var blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'mes-evenements-numeriques.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   function colorKeyFor(typeValue) {
@@ -505,8 +633,9 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     fill(publicFilterEl, state.cols.public, 'Tous les publics');
   }
 
-  function parseMonthKey(row) {
-    var raw = state.cols.month ? row[state.cols.month] : null;
+  function parseMonthKey(row, cols) {
+    var c = cols || state.cols;
+    var raw = c.month ? row[c.month] : null;
     if (!raw) return { key: '9999-99', label: 'Sans date' };
     var d = new Date(raw);
     if (isNaN(d.getTime())) return { key: '9999-99', label: 'Sans date' };
@@ -515,12 +644,12 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     return { key: key, label: label };
   }
 
-  function matchesFilters(row) {
+  function matchesFilters(row, cols) {
     var q = searchEl.value.trim().toLowerCase();
     var typeVal = typeFilterEl.value;
     var pubVal = publicFilterEl.value;
-    if (typeVal && state.cols.type && (row[state.cols.type] || '') !== typeVal) return false;
-    if (pubVal && state.cols.public && (row[state.cols.public] || '') !== pubVal) return false;
+    if (typeVal && cols.type && (row[cols.type] || '') !== typeVal) return false;
+    if (pubVal && cols.public && (row[cols.public] || '') !== pubVal) return false;
     if (q) {
       var haystack = Object.keys(row).map(function (k) { return row[k]; }).join(' ').toLowerCase();
       if (haystack.indexOf(q) === -1) return false;
@@ -531,11 +660,18 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
   function render() {
     contentEl.innerHTML = '';
     monthNavEl.innerHTML = '';
-    if (!state.rows.length) {
-      contentEl.innerHTML = '<p class="dane-empty">Aucune donnée à afficher.</p>';
+    updateSavedToggleLabel();
+
+    var cols = getDisplayCols();
+    var rows = getDisplayRows();
+
+    if (!rows.length) {
+      contentEl.innerHTML = viewMode === 'saved'
+        ? '<p class="dane-empty">Aucun événement gardé pour l’instant. Clique sur ☆ sur une tuile pour l’ajouter ici.</p>'
+        : '<p class="dane-empty">Aucune donnée à afficher.</p>';
       return;
     }
-    var filtered = state.rows.filter(matchesFilters);
+    var filtered = rows.filter(function (r) { return matchesFilters(r, cols); });
     if (!filtered.length) {
       contentEl.innerHTML = '<p class="dane-empty">Aucun résultat pour ces filtres.</p>';
       return;
@@ -544,7 +680,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     var groups = {};
     var order = [];
     filtered.forEach(function (row) {
-      var mk = parseMonthKey(row);
+      var mk = parseMonthKey(row, cols);
       if (!groups[mk.key]) { groups[mk.key] = { label: mk.label, rows: [] }; order.push(mk.key); }
       groups[mk.key].rows.push(row);
     });
@@ -580,50 +716,60 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
         card.style.animationDelay = (cardDelay * 0.03) + 's';
         cardDelay++;
 
-        var typeVal = state.cols.type ? row[state.cols.type] : null;
+        var typeVal = cols.type ? row[cols.type] : null;
         var colorKey = colorKeyFor(typeVal);
         card.style.setProperty('--card-accent', 'var(--type-' + colorKey + ')');
         card.style.setProperty('--card-accent-soft', 'var(--type-' + colorKey + '-soft)');
 
+        var evId = eventIdFromRow(row, cols);
+        var isSaved = !!savedEvents[evId];
+        var starBtn = document.createElement('button');
+        starBtn.type = 'button';
+        starBtn.className = 'dane-star-btn' + (isSaved ? ' active' : '');
+        starBtn.textContent = isSaved ? '★' : '☆';
+        starBtn.title = isSaved ? 'Retirer de mes événements' : 'Garder cet événement';
+        starBtn.addEventListener('click', function () { toggleSaved(row, cols); });
+        card.appendChild(starBtn);
+
         var titleEl = document.createElement('div');
         titleEl.className = 'dane-card-title';
-        titleEl.textContent = state.cols.title ? row[state.cols.title] : '(sans titre)';
+        titleEl.textContent = cols.title ? row[cols.title] : '(sans titre)';
         card.appendChild(titleEl);
 
         var badges = document.createElement('div');
         badges.className = 'dane-badges';
-        if (state.cols.type && row[state.cols.type]) {
+        if (cols.type && row[cols.type]) {
           var b1 = document.createElement('span');
           b1.className = 'dane-badge';
-          b1.textContent = row[state.cols.type];
+          b1.textContent = row[cols.type];
           badges.appendChild(b1);
         }
-        if (state.cols.public && row[state.cols.public]) {
+        if (cols.public && row[cols.public]) {
           var b2 = document.createElement('span');
           b2.className = 'dane-badge dane-public';
-          b2.textContent = row[state.cols.public];
+          b2.textContent = row[cols.public];
           badges.appendChild(b2);
         }
         if (badges.childElementCount) card.appendChild(badges);
 
-        if (state.cols.description && row[state.cols.description]) {
+        if (cols.description && row[cols.description]) {
           var desc = document.createElement('div');
           desc.className = 'dane-desc';
-          desc.textContent = row[state.cols.description];
+          desc.textContent = row[cols.description];
           card.appendChild(desc);
         }
 
-        if (state.cols.dates && row[state.cols.dates]) {
+        if (cols.dates && row[cols.dates]) {
           var dates = document.createElement('div');
           dates.className = 'dane-dates';
-          dates.textContent = row[state.cols.dates];
+          dates.textContent = row[cols.dates];
           card.appendChild(dates);
         }
 
-        if (state.cols.link && row[state.cols.link]) {
+        if (cols.link && row[cols.link]) {
           var link = document.createElement('a');
           link.className = 'dane-link';
-          link.href = row[state.cols.link];
+          link.href = row[cols.link];
           link.textContent = 'Voir le lien ↗';
           link.target = '_blank';
           link.rel = 'noopener';
@@ -690,7 +836,15 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
   typeFilterEl.addEventListener('change', render);
   publicFilterEl.addEventListener('change', render);
   refreshBtn.addEventListener('click', loadData);
+  themeToggleBtn.addEventListener('click', toggleTheme);
+  savedToggleBtn.addEventListener('click', function () {
+    viewMode = viewMode === 'saved' ? 'calendar' : 'saved';
+    render();
+  });
+  downloadBtn.addEventListener('click', downloadSavedAsText);
 
+  applyStoredTheme();
+  updateSavedToggleLabel();
   loadData();
   setInterval(loadData, REFRESH_INTERVAL_MS);
 })();
