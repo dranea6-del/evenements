@@ -429,6 +429,19 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     };
   }
 
+  // Fusionne les variantes d'écriture équivalentes (ex. "1D2D" et "1D/2D")
+  // pour éviter les doublons dans le filtre "Public".
+  function normalizePublicValues() {
+    var col = state.cols.public;
+    if (!col) return;
+    var aliases = { '1d2d': '1D/2D' };
+    state.rows.forEach(function (row) {
+      var v = (row[col] || '').toString().trim();
+      var key = v.toLowerCase();
+      if (aliases[key]) row[col] = aliases[key];
+    });
+  }
+
   function colorKeyFor(typeValue) {
     if (!typeValue) return 1;
     if (!state.typeColorMap[typeValue]) {
@@ -663,6 +676,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
         var parsed = parseWorkbookBuffer(buffer);
         state.rows = parsed.rows;
         state.cols = resolveColumns(parsed.headers);
+        normalizePublicValues();
         populateFilterOptions();
         render();
         setStatus('Dernière mise à jour : ' + new Date().toLocaleString('fr-FR'));
