@@ -5,9 +5,9 @@
   :root {
     --paper: #f5f6f1;
     --paper-line: #e4e7dd;
-    --ink: #1c2420;
-    --muted: #667066;
-    --rule: #d8dcd3;
+    --ink: #12160f;
+    --muted: #565f56;
+    --rule: #d3d7cb;
     --card-bg: #ffffff;
     --accent: #285c4d;
     --accent-soft: rgba(40, 92, 77, 0.10);
@@ -23,38 +23,38 @@
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --paper: #131a16;
-      --paper-line: #1c2621;
-      --ink: #ece8de;
-      --muted: #93a092;
-      --rule: #293530;
-      --card-bg: #192019;
-      --accent: #55b096;
-      --accent-soft: rgba(85, 176, 150, 0.14);
-      --amber: #e39a4c;
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.35);
+      --paper: #121314;
+      --paper-line: #121314;
+      --ink: #f5f5f3;
+      --muted: #b7bab8;
+      --rule: #3a3d3f;
+      --card-bg: #1d1f21;
+      --accent: #7dd4b6;
+      --accent-soft: rgba(125, 212, 182, 0.16);
+      --amber: #eaad6b;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.3);
 
-      --type-1: #55b096; --type-1-soft: rgba(85, 176, 150, 0.16);
-      --type-2: #e39a4c; --type-2-soft: rgba(227, 154, 76, 0.16);
-      --type-3: #c98fb3; --type-3-soft: rgba(201, 143, 179, 0.16);
-      --type-4: #83aed0; --type-4-soft: rgba(131, 174, 208, 0.16);
-      --type-5: #d9836e; --type-5-soft: rgba(217, 131, 110, 0.16);
+      --type-1: #7dd4b6; --type-1-soft: rgba(125, 212, 182, 0.18);
+      --type-2: #eaad6b; --type-2-soft: rgba(234, 173, 107, 0.18);
+      --type-3: #dda8cb; --type-3-soft: rgba(221, 168, 203, 0.18);
+      --type-4: #9cc2e6; --type-4-soft: rgba(156, 194, 230, 0.18);
+      --type-5: #e6a08a; --type-5-soft: rgba(230, 160, 138, 0.18);
     }
   }
   :root[data-theme="dark"] {
-    --paper: #131a16; --paper-line: #1c2621; --ink: #ece8de; --muted: #93a092;
-    --rule: #293530; --card-bg: #192019; --accent: #55b096;
-    --accent-soft: rgba(85, 176, 150, 0.14); --amber: #e39a4c;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px rgba(0, 0, 0, 0.35);
-    --type-1: #55b096; --type-1-soft: rgba(85, 176, 150, 0.16);
-    --type-2: #e39a4c; --type-2-soft: rgba(227, 154, 76, 0.16);
-    --type-3: #c98fb3; --type-3-soft: rgba(201, 143, 179, 0.16);
-    --type-4: #83aed0; --type-4-soft: rgba(131, 174, 208, 0.16);
-    --type-5: #d9836e; --type-5-soft: rgba(217, 131, 110, 0.16);
+    --paper: #121314; --paper-line: #121314; --ink: #f5f5f3; --muted: #b7bab8;
+    --rule: #3a3d3f; --card-bg: #1d1f21; --accent: #7dd4b6;
+    --accent-soft: rgba(125, 212, 182, 0.16); --amber: #eaad6b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(0, 0, 0, 0.3);
+    --type-1: #7dd4b6; --type-1-soft: rgba(125, 212, 182, 0.18);
+    --type-2: #eaad6b; --type-2-soft: rgba(234, 173, 107, 0.18);
+    --type-3: #dda8cb; --type-3-soft: rgba(221, 168, 203, 0.18);
+    --type-4: #9cc2e6; --type-4-soft: rgba(156, 194, 230, 0.18);
+    --type-5: #e6a08a; --type-5-soft: rgba(230, 160, 138, 0.18);
   }
   :root[data-theme="light"] {
-    --paper: #f5f6f1; --paper-line: #e4e7dd; --ink: #1c2420; --muted: #667066;
-    --rule: #d8dcd3; --card-bg: #ffffff; --accent: #285c4d;
+    --paper: #f5f6f1; --paper-line: #e4e7dd; --ink: #12160f; --muted: #565f56;
+    --rule: #d3d7cb; --card-bg: #ffffff; --accent: #285c4d;
     --accent-soft: rgba(40, 92, 77, 0.10); --amber: #c97a2b;
     --shadow: 0 1px 2px rgba(28, 36, 32, 0.06), 0 6px 16px rgba(28, 36, 32, 0.05);
     --type-1: #285c4d; --type-1-soft: rgba(40, 92, 77, 0.12);
@@ -156,9 +156,15 @@
     border-radius: 999px;
     padding: 5px 11px;
     white-space: nowrap;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
   }
   .dane-monthnav a:hover { color: var(--accent); border-color: var(--accent); }
+  .dane-monthnav a.active {
+    background: var(--nav-accent, var(--accent));
+    border-color: var(--nav-accent, var(--accent));
+    color: var(--paper);
+    font-weight: 600;
+  }
 
   .dane-toolbar {
     display: flex;
@@ -397,6 +403,7 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
   var refreshBtn = document.getElementById('dane-refresh-btn');
 
   var state = { rows: [], cols: {}, typeColorMap: {} };
+  var monthObserver = null;
 
   function findColumn(headers, keywords) {
     for (var i = 0; i < headers.length; i++) {
@@ -531,8 +538,9 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
     order.sort();
 
     var cardDelay = 0;
+    var navPairs = [];
 
-    order.forEach(function (key) {
+    order.forEach(function (key, monthIndex) {
       var group = groups[key];
       var anchorId = 'dane-m-' + key.replace(/[^a-z0-9]/gi, '');
       var section = document.createElement('div');
@@ -546,7 +554,9 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       var navChip = document.createElement('a');
       navChip.href = '#' + anchorId;
       navChip.textContent = group.label;
+      navChip.style.setProperty('--nav-accent', 'var(--type-' + ((monthIndex % TYPE_COLOR_COUNT) + 1) + ')');
       monthNavEl.appendChild(navChip);
+      navPairs.push({ section: section, chip: navChip });
 
       var cardsWrap = document.createElement('div');
       cardsWrap.className = 'dane-cards';
@@ -613,6 +623,28 @@ if(xr(e,"index.xml"))throw new Error("Unsupported NUMBERS 09 file");throw new Er
       section.appendChild(cardsWrap);
       contentEl.appendChild(section);
     });
+
+    setupMonthScrollSpy(navPairs);
+  }
+
+  function setupMonthScrollSpy(navPairs) {
+    if (monthObserver) monthObserver.disconnect();
+    if (!navPairs.length) return;
+
+    function setActive(chip) {
+      navPairs.forEach(function (p) { p.chip.classList.toggle('active', p.chip === chip); });
+    }
+    setActive(navPairs[0].chip);
+
+    monthObserver = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var pair = navPairs.find(function (p) { return p.section === entry.target; });
+        if (pair) setActive(pair.chip);
+      });
+    }, { rootMargin: '-10% 0px -75% 0px', threshold: 0 });
+
+    navPairs.forEach(function (p) { monthObserver.observe(p.section); });
   }
 
   function setStatus(text) {
